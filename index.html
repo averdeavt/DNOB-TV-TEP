@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://zencdn.net" rel="stylesheet" />
+    <style>
+        body { background: #111; color: white; font-family: Arial; text-align: center; margin: 0; padding: 20px; }
+        .container { display: flex; flex-direction: column; align-items: center; }
+        .video-wrapper { width: 80%; background: #000; border: 2px solid #333; margin-bottom: 20px; }
+        .channel-bar { display: flex; gap: 15px; }
+        .btn { padding: 15px 30px; font-size: 1.2rem; background: #222; color: #fff; border: 3px solid #444; cursor: pointer; border-radius: 8px; }
+        /* Dette er viktig for fjernkontrollen */
+        .btn:focus { border-color: #007bff; background: #007bff; outline: none; transform: scale(1.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="video-wrapper">
+            <video id="tv-player" class="video-js vjs-16-9 vjs-default-skin" controls autoplay playsinline></video>
+        </div>
+        <div class="channel-bar">
+            <button class="btn" onclick="play('DIN_STREAM_URL_1')">Kanal 1</button>
+            <button class="btn" onclick="play('DIN_STREAM_URL_2')">Kanal 2</button>
+            <button class="btn" onclick="play('DIN_STREAM_URL_3')">Kanal 3</button>
+        </div>
+    </div>
+
+    <script src="https://zencdn.net"></script>
+    <script>
+        var player = videojs('tv-player');
+        function play(url) {
+            player.src({ src: url, type: 'application/x-mpegURL' });
+            player.play();
+        }
+        // Setter fokus på første knapp når siden lastes, så fjernkontrollen virker med en gang
+        window.onload = () => { document.querySelector('.btn').focus(); };
+    </script>
+</body>
+</html>
