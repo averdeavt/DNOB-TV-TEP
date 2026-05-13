@@ -2,38 +2,91 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <link href="https://zencdn.net" rel="stylesheet" />
+    <title>Samsung TEP IPTV Portal</title>
     <style>
-        body { background: #111; color: white; font-family: Arial; text-align: center; margin: 0; padding: 20px; }
-        .container { display: flex; flex-direction: column; align-items: center; }
-        .video-wrapper { width: 80%; background: #000; border: 2px solid #333; margin-bottom: 20px; }
-        .channel-bar { display: flex; gap: 15px; }
-        .btn { padding: 15px 30px; font-size: 1.2rem; background: #222; color: #fff; border: 3px solid #444; cursor: pointer; border-radius: 8px; }
-        /* Dette er viktig for fjernkontrollen */
-        .btn:focus { border-color: #007bff; background: #007bff; outline: none; transform: scale(1.1); }
+        body { background-color: #0b0f19; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 30px; overflow: hidden; }
+        h1 { text-align: center; font-size: 26px; color: #3498db; margin-bottom: 25px; }
+        .menu { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; }
+        .channel-btn { background-color: #1a233a; color: #b0c4de; border: 3px solid #2c3e50; padding: 15px 35px; font-size: 20px; font-weight: bold; cursor: pointer; border-radius: 8px; outline: none; }
+        .channel-btn:focus, .channel-btn.active { border-color: #3498db; color: #fff; background-color: #243356; box-shadow: 0 0 15px rgba(52, 152, 219, 0.6); }
+        .video-container { width: 85%; height: 65vh; margin: 0 auto; background: #000; border: 3px solid #1a233a; border-radius: 10px; overflow: hidden; }
+        video { width: 100%; height: 100%; object-fit: contain; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="video-wrapper">
-            <video id="tv-player" class="video-js vjs-16-9 vjs-default-skin" controls autoplay playsinline></video>
-        </div>
-        <div class="channel-bar">
-            <button class="btn" onclick="play('DIN_STREAM_URL_1')">Kanal 1</button>
-            <button class="btn" onclick="play('DIN_STREAM_URL_2')">Kanal 2</button>
-            <button class="btn" onclick="play('DIN_STREAM_URL_3')">Kanal 3</button>
-        </div>
+
+    <h1>SAMSUNG TEP IPTV MULTICAST</h1>
+
+    <div class="menu">
+        <button class="channel-btn" data-url="udp://239.0.0.1:1234" autofocus>Kanal 1</button>
+        <button class="channel-btn" data-url="udp://239.0.0.2:1234">Kanal 2</button>
+        <button class="channel-btn" data-url="udp://239.0.0.3:1234">Kanal 3</button>
+        <button class="channel-btn" data-url="udp://239.0.0.4:1234">Kanal 4</button>
     </div>
 
-    <script src="https://zencdn.net"></script>
+    <div class="video-container">
+        <!-- TEP krever muted og playsinline for å tillate umiddelbar maskinvare-oppstart -->
+        <video id="tep-player" autoplay muted playsinline crossorigin="anonymous"></video>
+    </div>
+
     <script>
-        var player = videojs('tv-player');
-        function play(url) {
-            player.src({ src: url, type: 'application/x-mpegURL' });
-            player.play();
+        const player = document.getElementById('tep-player');
+        const buttons = document.querySelectorAll('.channel-btn');
+        let currentIdx = 0;
+
+        function changeChannel(button) {
+            const streamUrl = button.getAttribute('data-url');
+            
+            // TEP Sikkerhets-reset
+            player.pause();
+            player.removeAttribute('src');
+            
+            // Kritiske parametere for Tizen Enterprise Platform (TEP)
+            player.type = "video/mp2t"; 
+            player.src = streamUrl;
+            
+            player.load();
+            
+            // TEP krever en kort JavaScript-timeout før avspilling for at IGMP-join skal registreres
+            setTimeout(() => {
+                player.play().then(() => {
+                    // Skru opp lyden igjen etter at strømmen har startet (omgår autoplay-blokkering)
+                    player.muted = false; 
+                }).catch(err => console.log("TEP Player Error: ", err));
+            }, 150);
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
         }
-        // Setter fokus på første knapp når siden lastes, så fjernkontrollen virker med en gang
-        window.onload = () => { document.querySelector('.btn').focus(); };
+
+        buttons.forEach((button, index) => {
+            button.addEventListener('click', () => {
+                currentIdx = index;
+                changeChannel(button);
+            });
+        });
+
+        // TEP Standard fjernkontroll-koder
+        document.addEventListener('keydown', function(e) {
+            switch(e.keyCode) {
+                case 37: // Venstre pil
+                    currentIdx = (currentIdx - 1 + buttons.length) % buttons.length;
+                    buttons[currentIdx].focus();
+                    break;
+                case 39: // Høyre pil
+                    currentIdx = (currentIdx + 1) % buttons.length;
+                    buttons[currentIdx].focus();
+                    break;
+                case 13: // OK / Enter
+                    changeChannel(buttons[currentIdx]);
+                    break;
+            }
+        });
+
+        window.addEventListener('load', () => {
+            buttons.focus();
+            changeChannel(buttons);
+        });
     </script>
 </body>
 </html>
